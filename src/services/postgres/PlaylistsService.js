@@ -29,10 +29,12 @@ class PlaylistsService {
 
     async getPlaylists (user) {
         const query = {
-            text: `SELECT playlists.id, playlists.name, users.username FROM playlists 
-      LEFT JOIN users ON users.id = playlists.owner
-      LEFT JOIN collaborations ON playlists.id = collaborations.playlist_id  
-      WHERE playlists.owner = $1 OR collaborations.user_id = $1;`,
+            text: `
+                    SELECT playlists.id, playlists.name, users.username FROM playlists 
+                    LEFT JOIN users ON users.id = playlists.owner
+                    LEFT JOIN collaborations ON playlists.id = collaborations.playlist_id  
+                    WHERE playlists.owner = $1 OR collaborations.user_id = $1;
+                    `,
             values: [user]
         }
 
@@ -49,7 +51,7 @@ class PlaylistsService {
 
         const result = await this._pool.query(query)
 
-        if (!result.rows.length) {
+        if (!result.rowCount) {
             throw new NotFoundError('Playlist gagal dihapus. Id tidak ditemukan')
         }
     }
@@ -70,10 +72,12 @@ class PlaylistsService {
 
     async getSongsFromPlaylist (playlistId) {
         const query = {
-            text: `SELECT songs.id, songs.title, songs.performer
-      FROM songs
-      JOIN playlistsongs
-      ON songs.id = playlistsongs.song_id WHERE playlistsongs.playlist_id = $1`,
+            text: `
+                    SELECT songs.id, songs.title, songs.performer
+                    FROM songs
+                    JOIN playlistsongs
+                    ON songs.id = playlistsongs.song_id WHERE playlistsongs.playlist_id = $1
+                    `,
             values: [playlistId]
         }
 
@@ -90,7 +94,7 @@ class PlaylistsService {
 
         const result = await this._pool.query(query)
 
-        if (!result.rows.length) {
+        if (!result.rowCount) {
             throw new InvariantError('Lagu gagal dihapus')
         }
     }
@@ -101,7 +105,7 @@ class PlaylistsService {
             values: [id]
         }
         const result = await this._pool.query(query)
-        if (!result.rows.length) {
+        if (!result.rowCount) {
             throw new NotFoundError('Playlist tidak ditemukan')
         }
         const playlist = result.rows[0]
