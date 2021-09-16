@@ -6,8 +6,8 @@ class UploadsHandler {
         this.postUploadImageHandler = this.postUploadImageHandler.bind(this)
     }
 
-    async postUploadImageHandler (request, h) {
-        const { data } = request.payload
+    async postUploadImageHandler ({ payload }, h) {
+        const { data } = payload
 
         this._validator.validateImageHeaders(data.hapi.headers)
 

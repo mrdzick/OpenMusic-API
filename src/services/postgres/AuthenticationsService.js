@@ -2,29 +2,40 @@ const { Pool } = require('pg')
 const InvariantError = require('../../exceptions/invariant-error')
 
 class AuthenticationsService {
-    constructor () {
+    constructor (cacheService) {
         this._pool = new Pool()
+        this._cacheService = cacheService
     }
 
     async addRefreshToken (token) {
-        const query = {
-            text: 'INSERT INTO authentications VALUES($1)',
-            values: [token]
+        try {
+            await this._cacheService.get(`Token:${token}`)
+        } catch (error) {
+            const query = {
+                text: 'INSERT INTO authentications VALUES($1)',
+                values: [token]
+            }
+            const result = await this._pool.query(query)
+            await this._cacheService.set(`Token:${token}`, JSON.stringify(result.rows))
         }
-
-        await this._pool.query(query)
     }
 
     async verifyRefreshToken (token) {
-        const query = {
-            text: 'SELECT token FROM authentications WHERE token = $1',
-            values: [token]
-        }
+        try {
+            await this._cacheService.get(`Token:${token}`)
+        } catch (error) {
+            const query = {
+                text: 'SELECT token FROM authentications WHERE token = $1',
+                values: [token]
+            }
 
-        const result = await this._pool.query(query)
+            const result = await this._pool.query(query)
 
-        if (!result.rowCount) {
-            throw new InvariantError('Refresh token tidak valid')
+            if (!result.rowCount) {
+                throw new InvariantError('Refresh token tidak valid')
+            }
+
+            await this._cacheService.set(`Token:${token}`, JSON.stringify(result.rows))
         }
     }
 
@@ -37,6 +48,8 @@ class AuthenticationsService {
         }
 
         await this._pool.query(query)
+
+        await this._cacheService.delete(`Token${token}`)
     }
 }
 

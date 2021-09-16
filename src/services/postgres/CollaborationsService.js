@@ -3,8 +3,9 @@ const { nanoid } = require('nanoid')
 const InvariantError = require('../../exceptions/invariant-error')
 
 class CollaborationsService {
-    constructor () {
+    constructor (cacheService) {
         this._pool = new Pool()
+        this._cacheService = cacheService
     }
 
     async addCollaboration (playlistId, userId) {
@@ -20,6 +21,9 @@ class CollaborationsService {
         if (!result.rowCount) {
             throw new InvariantError('Kolaborasi gagal ditambahkan')
         }
+
+        await this._cacheService.delete(`Collaboration:${playlistId}`)
+
         return result.rows[0].id
     }
 
@@ -34,18 +38,28 @@ class CollaborationsService {
         if (!result.rowCount) {
             throw new InvariantError('Kolaborasi gagal dihapus')
         }
+
+        await this._cacheService.delete(`SongsIn:${playlistId}`)
+        await this._cacheService.delete(`Collaboration:${playlistId}`)
     }
 
     async verifyCollaborator (playlistId, userId) {
-        const query = {
-            text: 'SELECT * FROM collaborations WHERE playlist_id = $1 AND user_id = $2',
-            values: [playlistId, userId]
-        }
+        try {
+            const result = await this._cacheService.get(`Collaboration:${playlistId}`)
+            return JSON.parse(result)
+        } catch (error) {
+            const query = {
+                text: 'SELECT * FROM collaborations WHERE playlist_id = $1 AND user_id = $2',
+                values: [playlistId, userId]
+            }
 
-        const result = await this._pool.query(query)
+            const result = await this._pool.query(query)
 
-        if (!result.rowCount) {
-            throw new InvariantError('Kolaborasi gagal diverifikasi')
+            if (!result.rowCount) {
+                throw new InvariantError('Kolaborasi gagal diverifikasi')
+            }
+
+            await this._cacheService.set(`Collaboration:${playlistId}`, JSON.stringify(result.rows))
         }
     }
 }

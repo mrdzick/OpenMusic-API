@@ -12,10 +12,10 @@ class PlaylistsHandler {
         this.getUsersByUsernameHandler = this.getUsersByUsernameHandler.bind(this)
     }
 
-    async postPlaylistHandler (request, h) {
-        this._validator.validatePostPlaylistPayload(request.payload)
-        const { name } = request.payload
-        const { id: credentialId } = request.auth.credentials
+    async postPlaylistHandler ({ payload, auth }, h) {
+        this._validator.validatePostPlaylistPayload(payload)
+        const { name } = payload
+        const { id: credentialId } = auth.credentials
 
         const playlistId = await this._service.addPlaylist({
             name, owner: credentialId
@@ -32,8 +32,8 @@ class PlaylistsHandler {
         return response
     }
 
-    async getPlaylistsHandler (request) {
-        const { id: credentialId } = request.auth.credentials
+    async getPlaylistsHandler ({ auth }) {
+        const { id: credentialId } = auth.credentials
         const playlists = await this._service.getPlaylists(credentialId)
         return {
             status: 'success',
@@ -43,9 +43,9 @@ class PlaylistsHandler {
         }
     }
 
-    async deletePlaylistByIdHandler (request, h) {
-        const { playlistId } = request.params
-        const { id: credentialId } = request.auth.credentials
+    async deletePlaylistByIdHandler ({ params, auth }, h) {
+        const { playlistId } = params
+        const { id: credentialId } = auth.credentials
 
         await this._service.verifyPlaylistOwner(playlistId, credentialId)
         await this._service.deletePlaylistById(playlistId)
@@ -56,11 +56,11 @@ class PlaylistsHandler {
         }
     }
 
-    async postSongToPlaylistHandler (request, h) {
-        this._validator.validatePostSongPayload(request.payload)
-        const { playlistId } = request.params
-        const { songId } = request.payload
-        const { id: credentialId } = request.auth.credentials
+    async postSongToPlaylistHandler ({ payload, params, auth }, h) {
+        this._validator.validatePostSongPayload(payload)
+        const { playlistId } = params
+        const { songId } = payload
+        const { id: credentialId } = auth.credentials
 
         await this._service.verifyPlaylistAccess(playlistId, credentialId)
 
@@ -74,9 +74,9 @@ class PlaylistsHandler {
         return response
     }
 
-    async getSongsInPlaylistHandler (request, h) {
-        const { playlistId } = request.params
-        const { id: credentialId } = request.auth.credentials
+    async getSongsInPlaylistHandler ({ params, auth }, h) {
+        const { playlistId } = params
+        const { id: credentialId } = auth.credentials
 
         await this._service.verifyPlaylistAccess(playlistId, credentialId)
 
@@ -89,10 +89,10 @@ class PlaylistsHandler {
         }
     }
 
-    async deleteSongFromPlaylistByIdHandler (request, h) {
-        const { playlistId } = request.params
-        const { songId } = request.payload
-        const { id: credentialId } = request.auth.credentials
+    async deleteSongFromPlaylistByIdHandler ({ params, payload, auth }, h) {
+        const { playlistId } = params
+        const { songId } = payload
+        const { id: credentialId } = auth.credentials
 
         await this._service.verifyPlaylistAccess(playlistId, credentialId)
         await this._service.deleteSongFromPlaylist(playlistId, songId)
@@ -103,8 +103,8 @@ class PlaylistsHandler {
         }
     }
 
-    async getUsersByUsernameHandler (request, h) {
-        const { username = '' } = request.query
+    async getUsersByUsernameHandler ({ query }, h) {
+        const { username = '' } = query
         const users = await this._service.getUsersByUsername(username)
         return {
             status: 'success',
